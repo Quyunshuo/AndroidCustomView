@@ -1,2 +1,3 @@
 # AndroidCustomView
- 
+
+个人的自定义View的仓库,存储写好的自定义View,以及关于自定义View的一些知识点
