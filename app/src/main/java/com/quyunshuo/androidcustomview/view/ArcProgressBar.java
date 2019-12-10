@@ -1,4 +1,4 @@
-package com.quyunshuo.androidcustomview;
+package com.quyunshuo.androidcustomview.view;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -13,6 +13,8 @@ import android.util.AttributeSet;
 import android.view.View;
 
 import androidx.annotation.Nullable;
+
+import com.quyunshuo.androidcustomview.R;
 
 /**
  * 弧形带刻度进度条

@@ -21,7 +21,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <com.quyunshuo.androidcustomview.ArcProgressBar
+        <com.quyunshuo.androidcustomview.view.ArcProgressBar
             android:id="@+id/arc_progress_bar"
             android:layout_width="250dp"
             android:layout_height="250dp"
