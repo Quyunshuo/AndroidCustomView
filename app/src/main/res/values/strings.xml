@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">AndroidCustomView</string>
+    <string name="hello_custom_view">Hello CustomView</string>
 </resources>
