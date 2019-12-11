@@ -22,97 +22,58 @@ import com.quyunshuo.androidcustomview.R;
 public class ArcProgressBar extends View {
 
     /**
-     * 进度条渐变色组
+     * View整体相关
      */
-    private int[] mScheduleColors = {0xFF0071EB, 0xFF74DEFF};
+    private boolean mIsAntialiasing;    //是否开启抗锯齿
+
+    private int mDefaultSize;           //默认大小
+
+    private float mMaxValue;            //圆弧最大进度值
+
+    private float mCurrentValue;        //圆弧当前进度值
+
+    private RectF mRectF;               //路径
+
+    private Point mCircleCenterPoint;   //圆心坐标
+
+    private float mCurrentProgress;     //当前进度
 
     /**
-     * 是否开启抗锯齿
+     * 圆弧相关
      */
-    private boolean mIsAntialiasing;
+    private Paint mArcPaint;    //画笔
+
+    private float mArcWidth;    //宽度
+
+    private float mStartAngle;  //圆弧开始角度
+
+    private float mSweepAngle;  //圆弧扫描的角度
+
+    private Paint mBgArcPaint;  //背景圆弧画笔
+
+    private int mBgArcColor;    //背景圆弧颜色
+
+    private float mRadius;      //圆弧半径
+
+    private int[] mScheduleColors = {0xFF0071EB, 0xFF74DEFF};   //进度圆弧渐变色组
 
     /**
-     * 进度条最大进度值
+     * 刻度相关
      */
-    private float mMaxValue;
-    /**
-     * 进度条当前进度值
-     */
-    private float mCurrentValue;
-    /**
-     * 两刻度之间的间隔
-     */
-    private int mCalibrationInterval;
+    private Paint mCalibrationPaint;    //画笔
+
+    private float mCalibrationWidth;    //宽度
+
+    private int mCalibrationColor;      //颜色
+
+    private int mCalibrationInterval;   //两刻度之间的间隔
 
     /**
-     * 进度圆弧宽度
+     * 动画相关
      */
-    private float mArcWidth;
-    /**
-     * 进度圆弧的画笔
-     */
-    private Paint mArcPaint;
+    private ValueAnimator mAnimator;    //绘制圆弧的动画
 
-    /**
-     * 圆弧开始角度
-     */
-    private float mStartAngle;
-    /**
-     * 圆弧扫描的角度
-     */
-    private float mSweepAngle;
-
-    /**
-     * 每次改变进度的动画时长
-     */
-    private long mAnimTime;
-    /**
-     * 背景圆弧画笔
-     */
-    private Paint mBgArcPaint;
-    /**
-     * 背景圆弧颜色
-     */
-    private int mBgArcColor;
-    /**
-     * 刻度的画笔
-     */
-    private Paint mCalibrationPaint;
-    /**
-     * 刻度的宽度
-     */
-    private float mCalibrationWidth;
-    /**
-     * 刻度的颜色
-     */
-    private int mCalibrationColor;
-
-    /**
-     * 默认大小
-     */
-    private int mDefaultSize;
-    /**
-     * 路径
-     */
-    private RectF mRectF;
-    /**
-     * 圆心坐标
-     */
-    private Point mCircleCenterPoint;
-
-    /**
-     * 圆弧半径
-     */
-    private float mRadius;
-
-    /**
-     * 当前进度，[0.0f,1.0f]
-     */
-    private float mCurrentProgress;
-    /**
-     * 绘制圆弧的动画
-     */
-    private ValueAnimator mAnimator;
+    private long mAnimTime;             //动画时长
 
     public ArcProgressBar(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
@@ -130,97 +91,6 @@ public class ArcProgressBar extends View {
         initConfig(context, attrs);
         initPaint();
         setCurrentValue(mCurrentValue);
-    }
-
-    // TODO: 2019-12-10
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        setMeasuredDimension(measuring(widthMeasureSpec, mDefaultSize),
-                measuring(heightMeasureSpec, mDefaultSize));
-    }
-
-    // TODO: 2019-12-10
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-        int minSize = Math.min(getMeasuredWidth() - getPaddingLeft() - getPaddingRight() - 2 * (int) mArcWidth,
-                getMeasuredHeight() - getPaddingTop() - getPaddingBottom() - 2 * (int) mArcWidth);
-        mRadius = minSize / 2;
-        mCircleCenterPoint.x = getMeasuredWidth() / 2;
-        mCircleCenterPoint.y = getMeasuredHeight() / 2;
-        //绘制圆弧的边界
-        mRectF.left = mCircleCenterPoint.x - mRadius - mArcWidth / 2;
-        mRectF.top = mCircleCenterPoint.y - mRadius - mArcWidth / 2;
-        mRectF.right = mCircleCenterPoint.x + mRadius + mArcWidth / 2;
-        mRectF.bottom = mCircleCenterPoint.y + mRadius + mArcWidth / 2;
-        updateArcPaint();
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-        //绘制进度
-        drawArc(canvas);
-        //绘制刻度
-        drawCalibration(canvas);
-    }
-
-    /**
-     * 绘制刻度
-     */
-    private void drawCalibration(Canvas canvas) {
-        //获取分成多少个间隔
-        int total = (int) (mSweepAngle / mCalibrationInterval);
-        canvas.save();
-        canvas.rotate(mStartAngle, mCircleCenterPoint.x, mCircleCenterPoint.y);
-
-        for (int i = 0; i <= total; i++) {
-            //这一点可能比较难理解点:drawLine(...)从表面看画的是圆最右边的一条白线(白色小矩形),但是由于在drawArc()中已经将canvas顺时针旋转了135度,一次刻度间隔的白线也就从圆弧起点开始了
-            canvas.drawLine(mCircleCenterPoint.x + mRadius,
-                    mCircleCenterPoint.y,
-                    mCircleCenterPoint.x + mRadius + mArcWidth, mCircleCenterPoint.y,
-                    mCalibrationPaint);
-            canvas.rotate(mCalibrationInterval, mCircleCenterPoint.x, mCircleCenterPoint.y);
-        }
-        canvas.restore();
-    }
-
-    /**
-     * 绘制圆弧
-     * TODO:
-     */
-    private void drawArc(Canvas canvas) {
-        // 绘制背景圆弧
-        // 从进度圆弧结束的地方开始重新绘制，优化性能
-        float currentAngle = mSweepAngle * mCurrentProgress;
-        canvas.save();
-        canvas.rotate(mStartAngle, mCircleCenterPoint.x, mCircleCenterPoint.y);
-        canvas.drawArc(mRectF, currentAngle, mSweepAngle - currentAngle, false, mBgArcPaint);
-        // 第一个参数 oval 为 RectF 类型，即圆弧显示区域
-        // startAngle 和 sweepAngle  均为 float 类型，分别表示圆弧起始角度和圆弧度数
-        // 3点钟方向为0度，顺时针递增
-        // 如果 startAngle < 0 或者 > 360,则相当于 startAngle % 360
-        // useCenter:如果为True时，在绘制圆弧时将圆心包括在内，通常用来绘制扇形
-        canvas.drawArc(mRectF, 0, currentAngle, false, mArcPaint);
-        canvas.restore();
-    }
-
-    /**
-     * 测量
-     * TODO: 2019-12-10
-     */
-    private int measuring(int measureSpec, int defaultSize) {
-        int result = defaultSize;
-        int specMode = MeasureSpec.getMode(measureSpec);
-        int specSize = MeasureSpec.getSize(measureSpec);
-
-        if (specMode == MeasureSpec.EXACTLY) {
-            result = specSize;
-        } else if (specMode == MeasureSpec.AT_MOST) {
-            result = Math.min(result, specSize);
-        }
-        return result;
     }
 
     /**
@@ -284,10 +154,95 @@ public class ArcProgressBar extends View {
         mCalibrationPaint.setStrokeWidth(mCalibrationWidth);
     }
 
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        setMeasuredDimension(measuring(widthMeasureSpec, mDefaultSize),
+                measuring(heightMeasureSpec, mDefaultSize));
+    }
+
+    /**
+     * 测量
+     */
+    private int measuring(int measureSpec, int defaultSize) {
+        int result = defaultSize;
+        int specMode = MeasureSpec.getMode(measureSpec);
+        int specSize = MeasureSpec.getSize(measureSpec);
+
+        if (specMode == MeasureSpec.EXACTLY) {
+            result = specSize;
+        } else if (specMode == MeasureSpec.AT_MOST) {
+            result = Math.min(result, specSize);
+        }
+        return result;
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        int minSize = Math.min(getMeasuredWidth() - getPaddingLeft() - getPaddingRight() - 2 * (int) mArcWidth,
+                getMeasuredHeight() - getPaddingTop() - getPaddingBottom() - 2 * (int) mArcWidth);
+        //确定半径
+        mRadius = minSize / 2;
+        //确定圆心
+        mCircleCenterPoint.x = getMeasuredWidth() / 2;
+        mCircleCenterPoint.y = getMeasuredHeight() / 2;
+        //绘制圆弧的边界
+        mRectF.left = mCircleCenterPoint.x - mRadius - mArcWidth / 2;
+        mRectF.top = mCircleCenterPoint.y - mRadius - mArcWidth / 2;
+        mRectF.right = mCircleCenterPoint.x + mRadius + mArcWidth / 2;
+        mRectF.bottom = mCircleCenterPoint.y + mRadius + mArcWidth / 2;
+        updateArcPaint();
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+        //绘制进度
+        drawArc(canvas);
+        //绘制刻度
+        drawCalibration(canvas);
+    }
+
+    /**
+     * 绘制圆弧
+     */
+    private void drawArc(Canvas canvas) {
+        // 绘制长度 = 圆弧总长度 * 当前进度[0.0f,1.0f]
+        float currentAngle = mSweepAngle * mCurrentProgress;
+        // 保存画布
+        canvas.save();
+        // 旋转画布 是为了让圆弧的开始是指定的角度
+        canvas.rotate(mStartAngle, mCircleCenterPoint.x, mCircleCenterPoint.y);
+        // 绘制背景圆弧 useCenter:如果为True时，在绘制圆弧时将圆心包括在内，通常用来绘制扇形
+        canvas.drawArc(mRectF, currentAngle, mSweepAngle - currentAngle, false, mBgArcPaint);
+        // 绘制进度圆弧
+        canvas.drawArc(mRectF, 0, currentAngle, false, mArcPaint);
+        // 恢复
+        canvas.restore();
+    }
+
+    /**
+     * 绘制刻度
+     */
+    private void drawCalibration(Canvas canvas) {
+        //获取分成多少个间隔
+        int total = (int) (mSweepAngle / mCalibrationInterval);
+        canvas.save();
+        canvas.rotate(mStartAngle, mCircleCenterPoint.x, mCircleCenterPoint.y);
+        //每画一条刻度就旋转间隔角度再进行下一次的绘画
+        for (int i = 0; i <= total; i++) {
+            canvas.drawLine(mCircleCenterPoint.x + mRadius,
+                    mCircleCenterPoint.y,
+                    mCircleCenterPoint.x + mRadius + mArcWidth, mCircleCenterPoint.y,
+                    mCalibrationPaint);
+            canvas.rotate(mCalibrationInterval, mCircleCenterPoint.x, mCircleCenterPoint.y);
+        }
+        canvas.restore();
+    }
+
     /**
      * 设置当前值
-     *
-     * @param value
      */
     public void setCurrentValue(float value) {
         //如果值大于最大值就设置为最大值
@@ -301,8 +256,26 @@ public class ArcProgressBar extends View {
     }
 
     /**
+     * 绘制圆弧进度的动画
+     *
+     * @param start    开始值
+     * @param end      结束值
+     * @param animTime 动画时间
+     */
+    private void startAnimator(float start, float end, long animTime) {
+        mAnimator = null;
+        mAnimator = ValueAnimator.ofFloat(start, end);
+        mAnimator.setDuration(animTime);
+        mAnimator.addUpdateListener(animation -> {
+            //每次执行动画记录当前进度
+            mCurrentProgress = (float) animation.getAnimatedValue();
+            invalidate();
+        });
+        mAnimator.start();
+    }
+
+    /**
      * 更新圆弧画笔
-     * TODO:
      */
     private void updateArcPaint() {
         // 设置渐变
@@ -337,25 +310,6 @@ public class ArcProgressBar extends View {
      */
     public void setMaxValue(float maxValue) {
         mMaxValue = maxValue;
-    }
-
-    /**
-     * 绘制圆弧进度的动画
-     *
-     * @param start    开始值
-     * @param end      结束值
-     * @param animTime 动画时间
-     */
-    private void startAnimator(float start, float end, long animTime) {
-        mAnimator = null;
-        mAnimator = ValueAnimator.ofFloat(start, end);
-        mAnimator.setDuration(animTime);
-        mAnimator.addUpdateListener(animation -> {
-            //每次执行动画记录当前进度
-            mCurrentProgress = (float) animation.getAnimatedValue();
-            invalidate();
-        });
-        mAnimator.start();
     }
 
     /**
