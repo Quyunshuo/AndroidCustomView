@@ -45,6 +45,8 @@ public class ArcProgressBar extends View {
 
     private float mArcWidth;    //宽度
 
+    private int mArcColor;      //圆弧颜色
+
     private float mStartAngle;  //圆弧开始角度
 
     private float mSweepAngle;  //圆弧扫描的角度
@@ -55,7 +57,7 @@ public class ArcProgressBar extends View {
 
     private float mRadius;      //圆弧半径
 
-    private int[] mScheduleColors = {0xFF0071EB, 0xFF74DEFF};   //进度圆弧渐变色组
+//    private int[] mScheduleColors = {0xFF0071EB, 0xFF74DEFF};   //进度圆弧渐变色组
 
     /**
      * 刻度相关
@@ -116,6 +118,8 @@ public class ArcProgressBar extends View {
         mAnimTime = typedArray.getInt(R.styleable.ArcProgressBar_animTime, 3000);
         //获取背景圆弧的颜色       默认灰色
         mBgArcColor = typedArray.getColor(R.styleable.ArcProgressBar_bgArcColor, Color.GRAY);
+        //获取进度颜色
+        mArcColor=typedArray.getColor(R.styleable.ArcProgressBar_arcColors, Color.GREEN);
         //获取刻度的宽度           默认5
         mCalibrationWidth = typedArray.getDimension(R.styleable.ArcProgressBar_calibrationWidth, 5);
         //获取刻度的颜色          默认白色
@@ -137,6 +141,7 @@ public class ArcProgressBar extends View {
         mArcPaint.setStrokeWidth(mArcWidth);
         //设置绘画的线帽样式
         mArcPaint.setStrokeCap(Paint.Cap.BUTT);
+        mArcPaint.setColor(mArcColor);
 
         //背景圆弧画笔
         mBgArcPaint = new Paint();
@@ -192,7 +197,6 @@ public class ArcProgressBar extends View {
         mRectF.top = mCircleCenterPoint.y - mRadius - mArcWidth / 2;
         mRectF.right = mCircleCenterPoint.x + mRadius + mArcWidth / 2;
         mRectF.bottom = mCircleCenterPoint.y + mRadius + mArcWidth / 2;
-        updateArcPaint();
     }
 
     @Override
@@ -274,15 +278,15 @@ public class ArcProgressBar extends View {
         mAnimator.start();
     }
 
-    /**
-     * 更新圆弧画笔
-     */
-    private void updateArcPaint() {
-        // 设置渐变
-        // 渐变的颜色是360度，如果只显示270，那么则会缺失部分颜色
-        SweepGradient sweepGradient = new SweepGradient(mCircleCenterPoint.x, mCircleCenterPoint.y, mScheduleColors, null);
-        mArcPaint.setShader(sweepGradient);
-    }
+//    /**
+//     * 更新圆弧画笔
+//     */
+//    private void updateArcPaint() {
+//        // 设置渐变
+//        // 渐变的颜色是360度，如果只显示270，那么则会缺失部分颜色
+//        SweepGradient sweepGradient = new SweepGradient(mCircleCenterPoint.x, mCircleCenterPoint.y, mScheduleColors, null);
+//        mArcPaint.setShader(sweepGradient);
+//    }
 
     /**
      * 获取进度条当前进度值
